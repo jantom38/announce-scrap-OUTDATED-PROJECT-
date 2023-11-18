@@ -1,0 +1,271 @@
+t
+Products
+For Teams
+Search…
+Home
+PUBLIC
+Questions
+Tags
+Users
+Companies
+COLLECTIVES
+Explore Collectives
+TEAMS
+Stack Overflow for Teams – Start collaborating and sharing organizational knowledge.
+How to fix PyQt5 GUI freezing
+Asked 2 years, 4 months ago
+Modified 1 year, 2 months ago
+Viewed 969 times
+
+0
+
+
+I've created a simple GUI for my python app with QtDesigner. When i try to run my code it works properly but my problem now is that when i try to run my code using the convert button on my GUI the interface freeze or unresponsive and it will only be responsive after it finishes executing the code. Now my question is how can i fix this?
+
+Heres my code:
+
+# -*- coding: utf-8 -*-
+
+# Form implementation generated from reading ui file 'GUI.ui'
+#
+# Created by: PyQt5 UI code generator 5.13.2
+#
+# WARNING! All changes made in this file will be lost!
+
+
+from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtWidgets import QFileDialog, QMessageBox
+
+import sys
+import excel2img
+import openpyxl as xl
+
+
+class Ui_MainWindow(object):
+    def setupUi(self, MainWindow):
+        MainWindow.setObjectName("MainWindow")
+        MainWindow.resize(361, 303)
+        self.centralwidget = QtWidgets.QWidget(MainWindow)
+        self.centralwidget.setObjectName("centralwidget")
+        self.btn_exit = QtWidgets.QPushButton(self.centralwidget)
+        self.btn_exit.setGeometry(QtCore.QRect(270, 240, 75, 23))
+        self.btn_exit.setObjectName("btn_exit")
+        self.btn_openfile = QtWidgets.QPushButton(self.centralwidget)
+        self.btn_openfile.setGeometry(QtCore.QRect(40, 30, 75, 23))
+        self.btn_openfile.setObjectName("btn_openfile")
+        self.btn_convert = QtWidgets.QPushButton(self.centralwidget)
+        self.btn_convert.setGeometry(QtCore.QRect(40, 60, 75, 23))
+        self.btn_convert.setObjectName("btn_convert")
+        #self.btn_send = QtWidgets.QPushButton(self.centralwidget)
+        #self.btn_send.setGeometry(QtCore.QRect(40, 90, 75, 23))
+        #self.btn_send.setObjectName("btn_send")
+        MainWindow.setCentralWidget(self.centralwidget)
+        self.menubar = QtWidgets.QMenuBar(MainWindow)
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 361, 21))
+        self.menubar.setObjectName("menubar")
+        MainWindow.setMenuBar(self.menubar)
+        self.statusbar = QtWidgets.QStatusBar(MainWindow)
+        self.statusbar.setObjectName("statusbar")
+        MainWindow.setStatusBar(self.statusbar)
+
+        self.retranslateUi(MainWindow)
+        QtCore.QMetaObject.connectSlotsByName(MainWindow)
+
+    #Widgets
+        self.btn_openfile.clicked.connect(self.openfile)
+        self.btn_exit.clicked.connect(self.exit)
+        self.btn_convert.clicked.connect(self.convert)
+    #Widgets
+
+    def retranslateUi(self, MainWindow):
+        _translate = QtCore.QCoreApplication.translate
+        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        self.btn_exit.setText(_translate("MainWindow", "Exit"))
+        self.btn_openfile.setText(_translate("MainWindow", "Open File"))
+        self.btn_convert.setText(_translate("MainWindow", "Convert File"))
+        #self.btn_send.setText(_translate("MainWindow", "Send Payroll"))
+
+    #My Functons
+
+    fileName = ''
+    @classmethod
+    def openfile(cls):
+        fname = QFileDialog.getOpenFileName(None, "Open File", "", "Excel files (*.xlsx *xls)")
+        cls.fileName = fname[0]
+
+    def exit(self):
+        quit_msg = "Are you sure you want to exit the program?"
+        reply = QMessageBox.question(None, 'Prompt',
+                         quit_msg, QMessageBox.Yes | QMessageBox.No)
+
+        if reply == QMessageBox.Yes:
+            sys.exit()
+
+    def convert(self):
+        wb = xl.load_workbook(self.fileName, read_only=True)
+        ws = wb.active
+        a, b = 2, 2
+        x, y = 1, 44
+        z, w = 1, 44
+
+        max_row = ws.max_row
+        temp = 0
+        loop_num = 0
+        while temp < max_row:
+            temp += 52
+            loop_num += 1
+
+        print(loop_num)
+
+        for i in range(loop_num * 2):
+            if i % 2 == 0:
+                cell = "Sheet1!A{}:F{}".format(x,y)
+                ccell = 'B{}'.format(a)
+                var = ws[ccell].value
+                a += 52
+                x += 52
+                y += 52
+
+            else:
+                cell = "Sheet1!H{}:M{}".format(z,w)
+                ccell = 'I{}'.format(b)
+                var = ws[ccell].value
+                b += 52
+                z += 52
+                w += 52
+
+            name = '{}.png'.format(var)
+            excel2img.export_img(self.fileName, name, "", cell )
+
+            print('generating image {}'.format(i + 1))
+
+
+
+
+if __name__ == "__main__":
+    import sys
+    app = QtWidgets.QApplication(sys.argv)
+    MainWindow = QtWidgets.QMainWindow()
+    ui = Ui_MainWindow()
+    ui.setupUi(MainWindow)
+    MainWindow.show()
+    sys.exit(app.exec_())
+pythonpyqt5qt-designer
+Share
+Follow
+edited Jul 28, 2021 at 3:30
+eyllanesc's user avatar
+eyllanesc
+226k1818 gold badges130130 silver badges198198 bronze badges
+asked May 17, 2020 at 12:34
+3qu1n0x's user avatar
+3qu1n0x
+111 bronze badge
+Do not modify the code generated by Qt Designer but create another class that inherits from the appropriate widget and use the initial class to fill it. –
+S. Nick
+ May 17, 2020 at 13:39
+Add a comment
+2 Answers
+Sorted by:
+
+Highest score (default)
+
+1
+
+First of all you should not modify the class generated by Qt Designer so before applying my solution you must regenerate the .py so you must use pyuic again:
+
+pyuic5 your_ui.ui -o design.py -x
+onsidering the above, the problem is that you have a time consuming task blocking the eventloop preventing it from doing its jobs like reacting to user events. A possible solution for this is to use threads:
+
+import sys
+import threading
+
+from PyQt5 import QtCore, QtGui, QtWidgets
+
+import excel2img
+import openpyxl as xl
+
+from design import Ui_MainWindow
+
+
+def task(fileName):
+
+    wb = xl.load_workbook(fileName, read_only=True)
+    ws = wb.active
+    a, b = 2, 2
+    x, y = 1, 44
+    z, w = 1, 44
+
+    max_row = ws.max_row
+    temp = 0
+    loop_num = 0
+    while temp < max_row:
+        temp += 52
+        loop_num += 1
+
+    print(loop_num)
+
+    for i in range(loop_num * 2):
+        if i % 2 == 0:
+            cell = "Sheet1!A{}:F{}".format(x, y)
+            ccell = "B{}".format(a)
+            var = ws[ccell].value
+            a += 52
+            x += 52
+            y += 52
+
+        else:
+            cell = "Sheet1!H{}:M{}".format(z, w)
+            ccell = "I{}".format(b)
+            var = ws[ccell].value
+            b += 52
+            z += 52
+            w += 52
+
+        name = "{}.png".format(var)
+        excel2img.export_img(fileName, name, "", cell)
+
+        print("generating image {}".format(i + 1))
+
+
+class MainWindow(QtWidgets.Ui_MainWindow, Ui_MainWindow):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setupUi(self)
+
+        # Widgets
+        self.btn_openfile.clicked.connect(self.openfile)
+        self.btn_exit.clicked.connect(self.exit)
+        self.btn_convert.clicked.connect(self.convert)
+
+    fileName = ""
+
+    @classmethod
+    def openfile(cls):
+        cls.fileName, _ = QtWidgets.QFileDialog.getOpenFileName(
+            None, "Open File", "", "Excel files (*.xlsx *xls)"
+        )
+
+    def exit(self):
+        quit_msg = "Are you sure you want to exit the program?"
+        reply = QtWidgets.QMessageBox.question(
+            None,
+            "Prompt",
+            quit_msg,
+            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+        )
+
+        if reply == QtWidgets.QMessageBox.Yes:
+            sys.exit()
+
+    def convert(self):
+        threading.Thread(target=task, args=(self.fileName,), daemon=True).start()
+
+
+if __name__ == "__main__":
+    app = QtWidgets.QApplication(sys.argv)
+    MainWindow = QtWidgets.QMainWindow()
+    ui = Ui_MainWindow()
+    ui.setupUi(MainWindow)
+    MainWindow.show()
+    sys.exit(app.exec_())
